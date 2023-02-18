@@ -18,6 +18,7 @@ GamepadUIButton::GamepadUIButton( vgui::Panel *pParent, vgui::Panel* pActionSign
     , m_strButtonDescription( pDescription )
 {
     SetScheme(vgui::scheme()->LoadSchemeFromFile( pSchemeFile, "SchemePanel" ) );
+    _activationType = ACTIVATE_ONRELEASED;
 }
 
 GamepadUIButton::GamepadUIButton( vgui::Panel *pParent, vgui::Panel* pActionSignalTarget, const char *pSchemeFile, const char *pCommand, const wchar_t *pText, const wchar_t *pDescription )
@@ -26,6 +27,7 @@ GamepadUIButton::GamepadUIButton( vgui::Panel *pParent, vgui::Panel* pActionSign
     , m_strButtonDescription( pDescription )
 {
     SetScheme(vgui::scheme()->LoadSchemeFromFile( pSchemeFile, "SchemePanel" ) );
+    _activationType = ACTIVATE_ONRELEASED;
 }
 
 void GamepadUIButton::ApplySchemeSettings(vgui::IScheme* pScheme)
