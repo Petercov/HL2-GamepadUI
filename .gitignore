@@ -1,9 +1,0 @@
-
-*.vsidx
-*.lock
-*.db
-*.db-wal
-*.json
-*.opendb
-*.sqlite
-*.db-shm
