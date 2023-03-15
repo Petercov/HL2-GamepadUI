@@ -2,7 +2,7 @@
 #include "gamepadui_image.h"
 #include "gamepadui_util.h"
 #include "gamepadui_frame.h"
-#include "gamepadui_scroll.h"
+#include "gamepadui_scrollbar.h"
 #include "gamepadui_genericconfirmation.h"
 
 #include "ienginevgui.h"
@@ -55,6 +55,7 @@ public:
     void UpdateGradients();
 
     void OnThink() OVERRIDE;
+    void ApplySchemeSettings( vgui::IScheme *pScheme ) OVERRIDE;
     void OnCommand( char const* pCommand ) OVERRIDE;
 
     MESSAGE_FUNC_HANDLE( OnGamepadUIButtonNavigatedTo, "OnGamepadUIButtonNavigatedTo", button );
@@ -78,6 +79,8 @@ private:
     CUtlVector< chapter_t > m_Chapters;
 
     GamepadUIScrollState m_ScrollState;
+
+    GamepadUIScrollBar *m_pScrollBar;
 
     GAMEPADUI_PANEL_PROPERTY( float, m_ChapterOffsetX, "Chapters.OffsetX", "0", SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_PANEL_PROPERTY( float, m_ChapterOffsetY, "Chapters.OffsetY", "0", SchemeValueTypes::ProportionalFloat );
@@ -155,6 +158,28 @@ public:
         }
 
         PaintText();
+    }
+	
+    void ApplySchemeSettings( vgui::IScheme* pScheme )
+    {
+        BaseClass::ApplySchemeSettings( pScheme );
+
+        if (GamepadUI::GetInstance().GetScreenRatio() != 1.0f)
+        {
+            float flScreenRatio = GamepadUI::GetInstance().GetScreenRatio();
+
+            m_flHeight *= flScreenRatio;
+            for (int i = 0; i < ButtonStates::Count; i++)
+                m_flHeightAnimationValue[i] *= flScreenRatio;
+
+            // Also change the text offset
+            m_flTextOffsetY *= flScreenRatio;
+            for (int i = 0; i < ButtonStates::Count; i++)
+                m_flTextOffsetYAnimationValue[i] *= flScreenRatio;
+
+            SetSize( m_flWidth, m_flHeight + m_flExtraHeight );
+            DoAnimations( true );
+        }
     }
 
     void NavigateTo() OVERRIDE
@@ -317,6 +342,11 @@ GamepadUINewGamePanel::GamepadUINewGamePanel( vgui::Panel *pParent, const char* 
     m_CommentaryThumb.SetImage( "vgui/hud/icon_commentary" );
 
     UpdateGradients();
+
+    m_pScrollBar = new GamepadUIScrollBar(
+        this, this,
+        GAMEPADUI_RESOURCE_FOLDER "schemescrollbar.res",
+        NULL, true );
 }
 
 void GamepadUINewGamePanel::UpdateGradients()
@@ -332,6 +362,19 @@ void GamepadUINewGamePanel::OnThink()
     BaseClass::OnThink();
 
     LayoutChapterButtons();
+}
+
+void GamepadUINewGamePanel::ApplySchemeSettings( vgui::IScheme* pScheme )
+{
+    BaseClass::ApplySchemeSettings( pScheme );
+
+    if (GamepadUI::GetInstance().GetScreenRatio() != 1.0f)
+    {
+        float flScreenRatio = GamepadUI::GetInstance().GetScreenRatio();
+        m_ChapterOffsetX *= (flScreenRatio*flScreenRatio);
+    }
+
+    m_pScrollBar->InitScrollBar( &m_ScrollState, m_ChapterOffsetX, m_ChapterOffsetY + m_pChapterButtons[0]->GetTall() + m_ChapterSpacing );
 }
 
 void GamepadUINewGamePanel::OnGamepadUIButtonNavigatedTo( vgui::VPANEL button )
@@ -372,7 +415,7 @@ void GamepadUINewGamePanel::LayoutChapterButtons()
     int nParentW, nParentH;
 	GetParent()->GetSize( nParentW, nParentH );
 
-    float flScrollClamp = 0.0f;
+    float flScrollClamp = m_ChapterOffsetX;
     for ( int i = 0; i < m_pChapterButtons.Count(); i++ )
     {
         int nSize = ( m_pChapterButtons[0]->GetWide() + m_ChapterSpacing );
@@ -382,6 +425,12 @@ void GamepadUINewGamePanel::LayoutChapterButtons()
     }
 
     m_ScrollState.UpdateScrollBounds( 0.0f, flScrollClamp );
+
+    if (m_pChapterButtons.Count() > 0)
+    {
+        m_pScrollBar->UpdateScrollBounds( 0.0f, flScrollClamp,
+            ( m_pChapterButtons[0]->GetWide() + m_ChapterSpacing ) * 2.0f, nParentW - (m_ChapterOffsetX*2.0f) );
+    }
 
     for ( int i = 0; i < m_pChapterButtons.Count(); i++ )
     {
