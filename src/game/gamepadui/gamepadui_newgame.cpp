@@ -26,6 +26,8 @@ struct chapter_t;
 
 #define GAMEPADUI_CHAPTER_SCHEME GAMEPADUI_RESOURCE_FOLDER "schemechapterbutton.res"
 
+ConVar gamepadui_newgame_commentary_toggle( "gamepadui_newgame_commentary_toggle", "1", FCVAR_NONE, "Makes the commentary button toggle commentary mode instead of going straight into the game" );
+
 // Modders should override this if necessary. (Madi)
 // TODO - merge these into scheme config?
 bool GameHasCommentary()
@@ -63,6 +65,14 @@ public:
 
     void StartGame( int nChapter );
 
+    bool InCommentaryMode() const { return m_bCommentaryMode; }
+
+    GamepadUIImage *GetCommentaryThumb( float &flSize, float &flOffsetX, float &flOffsetY ) 
+    {
+        flSize = m_flCommentaryThumbSize; flOffsetX = m_flCommentaryThumbOffsetX; flOffsetY = m_flCommentaryThumbOffsetY;
+        return &m_CommentaryThumb;
+    }
+
 private:
     CUtlVector< GamepadUIChapterButton* > m_pChapterButtons;
     CUtlVector< chapter_t > m_Chapters;
@@ -73,7 +83,12 @@ private:
     GAMEPADUI_PANEL_PROPERTY( float, m_ChapterOffsetY, "Chapters.OffsetY", "0", SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_PANEL_PROPERTY( float, m_ChapterSpacing, "Chapters.Spacing", "0", SchemeValueTypes::ProportionalFloat );
 
+    GAMEPADUI_PANEL_PROPERTY( float, m_flCommentaryThumbSize, "Chapters.CommentaryThumb.Size", "64", SchemeValueTypes::ProportionalFloat );
+    GAMEPADUI_PANEL_PROPERTY( float, m_flCommentaryThumbOffsetX, "Chapters.CommentaryThumb.OffsetX", "8", SchemeValueTypes::ProportionalFloat );
+    GAMEPADUI_PANEL_PROPERTY( float, m_flCommentaryThumbOffsetY, "Chapters.CommentaryThumb.OffsetY", "8", SchemeValueTypes::ProportionalFloat );
+
     bool m_bCommentaryMode = false;
+    GamepadUIImage m_CommentaryThumb;
 };
 
 class GamepadUIChapterButton : public GamepadUIButton
@@ -124,6 +139,19 @@ public:
         {
             vgui::surface()->DrawSetColor( Color( 255, 255, 255, 16 ) );
             vgui::surface()->DrawFilledRect( 0, 0, w, imgH - offset );
+        }
+
+        if ( GetParent() && gamepadui_newgame_commentary_toggle.GetBool() )
+        {
+            GamepadUINewGamePanel *pPanel = static_cast<GamepadUINewGamePanel*>( GetParent() );
+            if (pPanel && pPanel->InCommentaryMode())
+            {
+                float flSize, flOffsetX, flOffsetY;
+                vgui::surface()->DrawSetColor( Color( 255, 255, 255, 255 ) );
+                vgui::surface()->DrawSetTexture( *pPanel->GetCommentaryThumb( flSize, flOffsetX, flOffsetY ) );
+                vgui::surface()->DrawTexturedRect( flOffsetX, flOffsetY, flOffsetX + flSize, flOffsetY + flSize );
+                vgui::surface()->DrawSetTexture( 0 );
+            }
         }
 
         PaintText();
@@ -286,6 +314,8 @@ GamepadUINewGamePanel::GamepadUINewGamePanel( vgui::Panel *pParent, const char* 
         m_pChapterButtons[i - 1]->SetNavRight( m_pChapterButtons[i] );
     }
 
+    m_CommentaryThumb.SetImage( "vgui/hud/icon_commentary" );
+
     UpdateGradients();
 }
 
@@ -375,8 +405,15 @@ void GamepadUINewGamePanel::OnCommand( char const* pCommand )
         GamepadUIChapterButton *pPanel = GamepadUIChapterButton::GetLastNewGameButton();
         if ( pPanel )
         {
-            m_bCommentaryMode = true;
-            pPanel->DoClick();
+            if ( gamepadui_newgame_commentary_toggle.GetBool() )
+            {
+                m_bCommentaryMode = !m_bCommentaryMode;
+            }
+            else
+            {
+                m_bCommentaryMode = true;
+                pPanel->DoClick();
+            }
         }
     }
     else if ( !V_strcmp( pCommand, "action_bonus_maps" ) )
