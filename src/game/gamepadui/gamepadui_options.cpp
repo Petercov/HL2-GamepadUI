@@ -4,6 +4,7 @@
 #include "gamepadui_scroll.h"
 #include "gamepadui_image.h"
 #include "gamepadui_genericconfirmation.h"
+#include "gamepadui_scrollbar.h"
 
 #include "ienginevgui.h"
 #include "vgui/ILocalize.h"
