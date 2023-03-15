@@ -241,3 +241,29 @@ void GamepadUI::GetSizingPanelOffset( int &nX, int &nY ) const
         return;
     pPanel->GetPos( nX, nY );
 }
+
+#ifdef MAPBASE
+void GamepadUI::BonusMapChallengeNames( char *pchFileName, char *pchMapName, char *pchChallengeName )
+{
+    Q_strncpy( pchFileName, m_szChallengeFileName, sizeof( m_szChallengeFileName ) );
+    Q_strncpy( pchMapName, m_szChallengeMapName, sizeof( m_szChallengeMapName ) );
+    Q_strncpy( pchChallengeName, m_szChallengeName, sizeof( m_szChallengeName ) );
+}
+
+void GamepadUI::BonusMapChallengeObjectives( int &iBronze, int &iSilver, int &iGold )
+{
+    iBronze = m_iBronze; iSilver = m_iSilver; iGold = m_iGold;
+}
+
+void GamepadUI::SetCurrentChallengeObjectives( int iBronze, int iSilver, int iGold )
+{
+    m_iBronze = iBronze; m_iSilver = iSilver; m_iGold = iGold;
+}
+
+void GamepadUI::SetCurrentChallengeNames( const char *pszFileName, const char *pszMapName, const char *pszChallengeName )
+{
+    Q_strncpy( m_szChallengeFileName, pszFileName, sizeof( m_szChallengeFileName ) );
+    Q_strncpy( m_szChallengeMapName, pszMapName, sizeof( m_szChallengeMapName ) );
+    Q_strncpy( m_szChallengeName, pszChallengeName, sizeof( m_szChallengeName ) );
+}
+#endif
