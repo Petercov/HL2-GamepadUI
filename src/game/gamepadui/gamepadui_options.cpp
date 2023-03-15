@@ -107,9 +107,9 @@ private:
     GAMEPADUI_PANEL_PROPERTY( float, m_flTabsOffsetX, "Tabs.OffsetX", "0", SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_PANEL_PROPERTY( float, m_flTabsOffsetY, "Tabs.OffsetY", "0", SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_PANEL_PROPERTY( float, m_flOptionsFade, "Options.Fade", "80", SchemeValueTypes::ProportionalFloat );
-    GAMEPADUI_PANEL_PROPERTY( float, m_flScrollBarOffsetX, "Scrollbar.OffsetX", "10", SchemeValueTypes::ProportionalFloat );
-    GAMEPADUI_PANEL_PROPERTY( float, m_flScrollBarWidth, "Scrollbar.Width", "80", SchemeValueTypes::ProportionalFloat );
-    GAMEPADUI_PANEL_PROPERTY( float, m_flScrollBarHeight, "Scrollbar.Height", "80", SchemeValueTypes::ProportionalFloat );
+    GAMEPADUI_PANEL_PROPERTY( float, m_flScrollBarOffsetX, "Options.Scrollbar.OffsetX", "716", SchemeValueTypes::ProportionalFloat );
+    GAMEPADUI_PANEL_PROPERTY( float, m_flScrollBarOffsetY, "Options.Scrollbar.OffsetY", "128", SchemeValueTypes::ProportionalFloat );
+    GAMEPADUI_PANEL_PROPERTY( float, m_flScrollBarHeight, "Options.Scrollbar.Height", "256", SchemeValueTypes::ProportionalFloat );
 
     GamepadUITab m_Tabs[ MAX_OPTIONS_TABS ];
     int m_nTabCount = 0;
@@ -118,6 +118,8 @@ private:
 
     GamepadUIGlyph m_leftGlyph;
     GamepadUIGlyph m_rightGlyph;
+	
+    GamepadUIScrollBar *m_pScrollBar;
 
     static GamepadUIOptionsPanel *s_pOptionsPanel;
 };
@@ -1379,6 +1381,11 @@ GamepadUIOptionsPanel::GamepadUIOptionsPanel( vgui::Panel* pParent, const char* 
     SetActiveTab( GetActiveTab() );
 
     UpdateGradients();
+
+    m_pScrollBar = new GamepadUIScrollBar(
+        this, this,
+        GAMEPADUI_RESOURCE_FOLDER "schemescrollbar.res",
+        NULL, false );
 }
 
 GamepadUIOptionsPanel::~GamepadUIOptionsPanel()
@@ -1441,18 +1448,7 @@ void GamepadUIOptionsPanel::LayoutCurrentTab()
             pButton->SetVisible( false );
     }
 
-    int yMax = 0;
     int nActiveTab = GetActiveTab();
-    {
-        int nScrollCount = m_Tabs[nActiveTab].pButtons.Count() - 8;
-        for ( int i = 0; i < m_Tabs[nActiveTab].pButtons.Count(); i++ )
-        {
-            GamepadUIButton *pButton = m_Tabs[ nActiveTab ].pButtons[ i ];
-            if ( i < nScrollCount )
-                yMax += pButton->GetTall();
-        }
-        m_Tabs[ nActiveTab ].ScrollState.UpdateScrollBounds( 0.0f, yMax );
-    }
 
     int i = 0;
     int previousSizes = 0;
@@ -1533,12 +1529,20 @@ void GamepadUIOptionsPanel::LayoutCurrentTab()
             previousSizes += pButton->GetTall();
         i++;
     }
-
-    if ( yMax != 0 )
+	
+    int yMax = 0;
     {
-        vgui::surface()->DrawSetColor( Color( 255, 255, 255, 200 ) );
-        int scrollbarY = RemapValClamped( m_Tabs[ nActiveTab ].ScrollState.GetScrollProgress(), 0, yMax, y, nParentH - m_flFooterButtonsOffsetY - m_nFooterButtonHeight - m_flScrollBarHeight );
-        vgui::surface()->DrawFilledRect( m_flTabsOffsetX + m_flScrollBarOffsetX, scrollbarY, m_flTabsOffsetX + m_flScrollBarOffsetX + m_flScrollBarWidth, scrollbarY + m_flScrollBarHeight );
+        if (previousSizes > m_flScrollBarHeight)
+            yMax = previousSizes - m_flScrollBarHeight;
+        m_Tabs[ nActiveTab ].ScrollState.UpdateScrollBounds( 0.0f, yMax );
+
+        m_pScrollBar->InitScrollBar( &m_Tabs[nActiveTab].ScrollState,
+            m_flScrollBarOffsetX, m_flScrollBarOffsetY );
+
+        m_pScrollBar->UpdateScrollBounds( 0.0f, yMax,
+            m_flScrollBarHeight, m_flScrollBarHeight );
+			
+        m_Tabs[ nActiveTab ].ScrollState.UpdateScrollBounds( 0.0f, yMax );
     }
 
     m_Tabs[nActiveTab].ScrollState.UpdateScrolling( 2.0f, GamepadUI::GetInstance().GetTime() );
@@ -2249,6 +2253,7 @@ void GamepadUIOptionsPanel::ApplySchemeSettings( vgui::IScheme* pScheme )
     {
         float flScreenRatio = GamepadUI::GetInstance().GetScreenRatio();
         m_flTabsOffsetX *= (flScreenRatio * flScreenRatio);
+        m_flScrollBarOffsetX *= (flScreenRatio);
     }
 }
 

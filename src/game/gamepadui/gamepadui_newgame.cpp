@@ -2,7 +2,7 @@
 #include "gamepadui_image.h"
 #include "gamepadui_util.h"
 #include "gamepadui_frame.h"
-#include "gamepadui_scroll.h"
+#include "gamepadui_scrollbar.h"
 #include "gamepadui_genericconfirmation.h"
 
 #include "ienginevgui.h"
@@ -79,6 +79,8 @@ private:
     CUtlVector< chapter_t > m_Chapters;
 
     GamepadUIScrollState m_ScrollState;
+
+    GamepadUIScrollBar *m_pScrollBar;
 
     GAMEPADUI_PANEL_PROPERTY( float, m_ChapterOffsetX, "Chapters.OffsetX", "0", SchemeValueTypes::ProportionalFloat );
     GAMEPADUI_PANEL_PROPERTY( float, m_ChapterOffsetY, "Chapters.OffsetY", "0", SchemeValueTypes::ProportionalFloat );
@@ -340,6 +342,11 @@ GamepadUINewGamePanel::GamepadUINewGamePanel( vgui::Panel *pParent, const char* 
     m_CommentaryThumb.SetImage( "vgui/hud/icon_commentary" );
 
     UpdateGradients();
+
+    m_pScrollBar = new GamepadUIScrollBar(
+        this, this,
+        GAMEPADUI_RESOURCE_FOLDER "schemescrollbar.res",
+        NULL, true );
 }
 
 void GamepadUINewGamePanel::UpdateGradients()
@@ -366,6 +373,8 @@ void GamepadUINewGamePanel::ApplySchemeSettings( vgui::IScheme* pScheme )
         float flScreenRatio = GamepadUI::GetInstance().GetScreenRatio();
         m_ChapterOffsetX *= (flScreenRatio*flScreenRatio);
     }
+
+    m_pScrollBar->InitScrollBar( &m_ScrollState, m_ChapterOffsetX, m_ChapterOffsetY + m_pChapterButtons[0]->GetTall() + m_ChapterSpacing );
 }
 
 void GamepadUINewGamePanel::OnGamepadUIButtonNavigatedTo( vgui::VPANEL button )
@@ -406,7 +415,7 @@ void GamepadUINewGamePanel::LayoutChapterButtons()
     int nParentW, nParentH;
 	GetParent()->GetSize( nParentW, nParentH );
 
-    float flScrollClamp = 0.0f;
+    float flScrollClamp = m_ChapterOffsetX;
     for ( int i = 0; i < m_pChapterButtons.Count(); i++ )
     {
         int nSize = ( m_pChapterButtons[0]->GetWide() + m_ChapterSpacing );
@@ -416,6 +425,12 @@ void GamepadUINewGamePanel::LayoutChapterButtons()
     }
 
     m_ScrollState.UpdateScrollBounds( 0.0f, flScrollClamp );
+
+    if (m_pChapterButtons.Count() > 0)
+    {
+        m_pScrollBar->UpdateScrollBounds( 0.0f, flScrollClamp,
+            ( m_pChapterButtons[0]->GetWide() + m_ChapterSpacing ) * 2.0f, nParentW - (m_ChapterOffsetX*2.0f) );
+    }
 
     for ( int i = 0; i < m_pChapterButtons.Count(); i++ )
     {
