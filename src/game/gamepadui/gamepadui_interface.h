@@ -86,6 +86,8 @@ public:
 
     void SetCurrentChallengeObjectives( int iBronze, int iSilver, int iGold );
     void SetCurrentChallengeNames( const char *pszFileName, const char *pszMapName, const char *pszChallengeName );
+
+    vgui::HFont GetButtonGlyphFont();
 #endif
 
 private:

@@ -163,7 +163,12 @@ int GamepadUIButton::PaintText()
     }
 
 #ifdef HL2_RETAIL // Steam input and Steam Controller are not supported in SDK2013 (Madi)
-    if ( g_pInputSystem->IsSteamControllerActive() )
+    const bool bController = g_pInputSystem->IsSteamControllerActive();
+#else
+    const bool bController = (g_pInputSystem->GetJoystickCount() >= 1);
+#endif
+
+    if (bController)
     {
         const int nGlyphSize = m_flHeight * 0.80f;
         if ( m_glyph.SetupGlyph( nGlyphSize, FooterButtons::GetButtonActionHandleString( m_eFooterButton ) ) )
@@ -185,9 +190,7 @@ int GamepadUIButton::PaintText()
             m_glyph.PaintGlyph( nGlyphPosX, nGlyphPosY, nGlyphSize, nAlpha );
         }
     }
-    else
-#endif // HL2_RETAIL
-	if (GetFooterButton() != FooterButtons::None && gamepadui_center_footer_buttons.GetBool() && !m_CenterX)
+    else if (GetFooterButton() != FooterButtons::None && gamepadui_center_footer_buttons.GetBool() && !m_CenterX)
     {
         nTextPosX = m_flWidth / 2 - nTextSizeX / 2;
     }
