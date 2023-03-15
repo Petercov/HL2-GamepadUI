@@ -31,6 +31,7 @@ class GamepadUIMainMenu;
 #define GAMEPADUI_RESOURCE_FOLDER "gamepadui" CORRECT_PATH_SEPARATOR_S
 
 class GamepadUIBasePanel;
+class GamepadUISizingPanel;
 
 class GamepadUI : public IGamepadUI
 {
@@ -56,6 +57,8 @@ public:
     vgui::VPANEL GetRootVPanel() const;
     vgui::Panel *GetBasePanel() const;
     vgui::VPANEL GetBaseVPanel() const;
+    vgui::Panel *GetSizingPanel() const;
+    vgui::VPANEL GetSizingVPanel() const;
     vgui::Panel *GetMainMenuPanel() const;
     vgui::VPANEL GetMainMenuVPanel() const;
 
@@ -77,8 +80,11 @@ public:
     void ResetToMainMenuGradients();
 
     CSteamAPIContext* GetSteamAPIContext() { return &m_SteamAPIContext; }
-	
-    float GetScreenRatio() const { return m_flScreenRatio; }
+
+    bool GetScreenRatio( float &flX, float &flY ) const { flX = m_flScreenXRatio; flY = m_flScreenYRatio; return (flX != 1.0f || flY != 1.0f); }
+
+    void GetSizingPanelScale( float &flX, float &flY ) const;
+    void GetSizingPanelOffset( int &nX, int &nY ) const;
 
 private:
 
@@ -101,8 +107,9 @@ private:
     CSteamAPIContext m_SteamAPIContext;
 
     GamepadUIMainMenu* GetMainMenu() const;
-	
-    float   m_flScreenRatio = 1.0f;
+
+    float   m_flScreenXRatio = 1.0f;
+    float   m_flScreenYRatio = 1.0f;
 
     static GamepadUI *s_pGamepadUI;
 };

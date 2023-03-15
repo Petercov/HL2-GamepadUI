@@ -18,7 +18,7 @@ GamepadUIButton::GamepadUIButton( vgui::Panel *pParent, vgui::Panel* pActionSign
     , m_strButtonText( pText )
     , m_strButtonDescription( pDescription )
 {
-    SetScheme(vgui::scheme()->LoadSchemeFromFile( pSchemeFile, "SchemePanel" ) );
+    SetScheme( vgui::scheme()->LoadSchemeFromFileEx( GamepadUI::GetInstance().GetSizingVPanel(), pSchemeFile, "SchemePanel" ) );
     _activationType = ACTIVATE_ONRELEASED;
 }
 
@@ -27,7 +27,7 @@ GamepadUIButton::GamepadUIButton( vgui::Panel *pParent, vgui::Panel* pActionSign
     , m_strButtonText( pText )
     , m_strButtonDescription( pDescription )
 {
-    SetScheme(vgui::scheme()->LoadSchemeFromFile( pSchemeFile, "SchemePanel" ) );
+    SetScheme( vgui::scheme()->LoadSchemeFromFileEx( GamepadUI::GetInstance().GetSizingVPanel(), pSchemeFile, "SchemePanel" ) );
     _activationType = ACTIVATE_ONRELEASED;
 }
 
@@ -74,13 +74,21 @@ void GamepadUIButton::ApplySchemeSettings(vgui::IScheme* pScheme)
             m_flCachedExtraHeight = 0.0f;
     }
 	
-    if (GamepadUI::GetInstance().GetScreenRatio() != 1.0f)
+    float flX, flY;
+    if (GamepadUI::GetInstance().GetScreenRatio( flX, flY ))
     {
-        float flScreenRatio = GamepadUI::GetInstance().GetScreenRatio();
-
-        m_flWidth *= flScreenRatio;
-        for (int i = 0; i < ButtonStates::Count; i++)
-            m_flWidthAnimationValue[i] *= flScreenRatio;
+        if (flX != 1.0f)
+        {
+            m_flWidth *= flX;
+            for (int i = 0; i < ButtonStates::Count; i++)
+                m_flWidthAnimationValue[i] *= flX;
+        }
+        if (flY != 1.0f)
+        {
+            m_flHeight *= flY;
+            for (int i = 0; i < ButtonStates::Count; i++)
+                m_flHeightAnimationValue[i] *= flY;
+        }
     }
 
     SetSize( m_flWidth, m_flHeight + m_flExtraHeight );
