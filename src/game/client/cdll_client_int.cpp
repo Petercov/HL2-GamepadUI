@@ -1196,6 +1196,14 @@ void CHLClient::PostInit()
 				{
 					GamepadUI_Log( "Initializing IGamepadUI interface...\n" );
 
+					// Prevent startupmenu from running
+					ConCommand *startupmenu = nullptr;
+					startupmenu = g_pCVar->FindCommand( "startupmenu" );
+					if ( startupmenu )
+					{
+						startupmenu->RemoveCallBack();
+					}
+
 					factorylist_t factories;
 					FactoryList_Retrieve( factories );
 					g_pGamepadUI->Initialize( factories.appSystemFactory );

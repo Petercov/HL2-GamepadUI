@@ -72,6 +72,7 @@ $Project
         $File "gamepadui_string.h"
         $File "gamepadui_scrollbar.h"
         $File "gamepadui_util.h"
+        $File "gamepadui_loading.h"
     }
 
     $Folder "Source Files"
@@ -94,6 +95,7 @@ $Project
         $File "gamepadui_options.cpp"
         $File "gamepadui_scrollbar.cpp"
         $File "gamepadui_util.cpp"
+        $File "gamepadui_loading.cpp"
     }
 
     $Folder "Link Libraries"

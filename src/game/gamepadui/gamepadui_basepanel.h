@@ -30,6 +30,9 @@ public:
     void ReleaseBackgroundMusic();
 
 private:
+    void HideGameMenuLogos();
+
+private:
     GamepadUIMainMenu *m_pMainMenu = NULL;
 
     GamepadUIFrame *m_pCurrentFrame = NULL;
