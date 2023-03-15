@@ -40,6 +40,41 @@
 		"title"			"#GameUI_Keyboard"
 		"items_from"	"keyboard"
 		"alternating"   "1"
+		"items"
+		{
+			"AdvancedHeader"
+			{
+				"text"			"#GameUI_AdvancedNoEllipsis"
+				"type"			"headeryheader"
+				"advanced"		"1"
+			}
+			
+			"FastWeaponSwitch"
+			{
+				"text"			"#GameUI_FastSwitchCheck"
+				"type"			"wheelywheel"
+				"convar"		"hud_fastswitch"
+
+				"options"
+				{
+					"0"		"#gameui_disabled"
+					"1"		"#gameui_enabled"
+				}
+			}
+			
+			"DeveloperConsole"
+			{
+				"text"			"#GameUI_DeveloperConsoleCheck"
+				"type"			"wheelywheel"
+				"convar"		"con_enable"
+
+				"options"
+				{
+					"0"		"#gameui_disabled"
+					"1"		"#gameui_enabled"
+				}
+			}
+		}
 	}
 	"Mouse"
 	{
@@ -260,22 +295,6 @@
 				"instantapply"	"1"
 
 				"options_from"	"displaymode"
-			}
-
-			"HUDAspectRatio"
-			{
-				"text"			"#GameUI_HUDAspectRatio"
-				"type"			"wheelywheel"
-
-				"convar"		"_gamepadui_hudaspect"
-				"instantapply"	"1"
-				"options"
-				{
-					"0"			"#GameUI_Achievement_Unlocked"
-					"1"			"#GameUI_AspectNormal"
-					"2"			"#GameUI_AspectWide16x9"
-					"3"			"#GameUI_AspectWide16x10"
-				}
 			}
 
 			"AdvancedHeader"
