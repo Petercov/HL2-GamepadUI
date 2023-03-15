@@ -33,6 +33,8 @@ const int MAX_OPTIONS_TABS = 8;
 class GamepadUIWheelyWheel;
 void OnResolutionsNeedUpdate( IConVar *var, const char *pOldValue, float flOldValue );
 
+extern CUtlSymbolTable g_ButtonSoundNames;
+
 ConVar _gamepadui_water_detail( "_gamepadui_water_detail", "0" );
 ConVar _gamepadui_shadow_detail( "_gamepadui_shadow_detail", "0" );
 ConVar _gamepadui_antialiasing( "_gamepadui_antialiasing", "0" );
@@ -524,6 +526,7 @@ public:
         , m_flStep( flStep )
         , nTextPrecision( nTextPrecision )
     {
+        SetUseCaptureMouse( true );
     }
 
     void OnKeyCodePressed( vgui::KeyCode code )
@@ -537,9 +540,17 @@ public:
 #ifdef HL2_RETAIL // Steam input and Steam Controller are not supported in SDK2013 (Madi)
         case STEAMCONTROLLER_DPAD_LEFT:
 #endif
-            m_flValue = Clamp( m_flValue - m_flStep, m_flMin, m_flMax );
-            if ( m_bInstantApply )
-                UpdateConVar();
+            {
+                float flValue = Clamp( m_flValue - (m_bFineAdjust ? m_flMouseStep : m_flStep), m_flMin, m_flMax );
+                if (flValue != m_flValue)
+                {
+                    if (m_sSliderSoundName != UTL_INVAL_SYMBOL)
+                        vgui::surface()->PlaySound( g_ButtonSoundNames.String( m_sSliderSoundName ) );
+                    m_flValue = flValue;
+                    if ( m_bInstantApply )
+                        UpdateConVar();
+                }
+            }
             break;
 
         case KEY_RIGHT:
@@ -548,15 +559,119 @@ public:
 #ifdef HL2_RETAIL
         case STEAMCONTROLLER_DPAD_RIGHT:
 #endif
-            m_flValue = Clamp( m_flValue + m_flStep, m_flMin, m_flMax );
-            if ( m_bInstantApply )
-                UpdateConVar();
+            {
+                float flValue = Clamp( m_flValue + (m_bFineAdjust ? m_flMouseStep : m_flStep), m_flMin, m_flMax );
+                if (flValue != m_flValue)
+                {
+                    if (m_sSliderSoundName != UTL_INVAL_SYMBOL)
+                        vgui::surface()->PlaySound( g_ButtonSoundNames.String( m_sSliderSoundName ) );
+                    m_flValue = flValue;
+                    if ( m_bInstantApply )
+                        UpdateConVar();
+                }
+            }
+            break;
+
+        case KEY_RSHIFT:
+        case KEY_LSHIFT:
+            {
+                m_bFineAdjust = true;
+            }
             break;
 
         default:
             BaseClass::OnKeyCodePressed( code );
             break;
         }
+    }
+
+    void OnKeyCodeReleased( vgui::KeyCode code )
+    {
+        ButtonCode_t buttonCode = GetBaseButtonCode( code );
+        switch ( buttonCode )
+        {
+        case KEY_RSHIFT:
+        case KEY_LSHIFT:
+            {
+                m_bFineAdjust = false;
+            }
+            break;
+
+        default:
+            BaseClass::OnKeyCodeReleased( code );
+            break;
+        }
+    }
+
+    void OnMousePressed( vgui::MouseCode code )
+    {
+        int x, y;
+        GetPos( x, y );
+
+        int mx, my;
+        g_pVGuiInput->GetCursorPos( mx, my );
+
+        int iSliderEnd = x + m_flWidth - m_flTextOffsetX;
+        int iSliderStart = iSliderEnd - m_flSliderWidth;
+
+        // Allow some wiggle room
+		if (mx > iSliderStart-4 && mx < iSliderEnd+4)
+        {
+            // Start influencing the slider value
+            BaseClass::OnMousePressed( code );
+        }
+    }
+
+    void SetMouseStep( float flStep )
+    {
+        m_flMouseStep = flStep;
+    }
+
+    void OnThink()
+    {
+        if (IsSelected())
+        {
+            int x, y;
+            GetPos( x, y );
+
+            int mx, my;
+            g_pVGuiInput->GetCursorPos( mx, my );
+
+            int iSliderEnd = x + m_flWidth - m_flTextOffsetX;
+            int iSliderStart = iSliderEnd - m_flSliderWidth;
+
+            // Set the slider value to whichever step is closest to the cursor
+            float flProgress = RemapValClamped( mx, iSliderStart, iSliderEnd, m_flMin, m_flMax );
+
+            float flRemainder = fmodf( flProgress, m_flMouseStep );
+            flProgress -= flRemainder;
+
+            if ((flRemainder / m_flMouseStep) > 0.5f)
+                flProgress += m_flMouseStep;
+
+            if (flProgress != m_flValue)
+            {
+                if (m_sSliderSoundName != UTL_INVAL_SYMBOL && m_flLastSliderSoundTime < GamepadUI::GetInstance().GetTime())
+                {
+                    vgui::surface()->PlaySound( g_ButtonSoundNames.String( m_sSliderSoundName ) );
+                    m_flLastSliderSoundTime = GamepadUI::GetInstance().GetTime() + 0.04f; // Arbitrary sound cooldown
+                }
+                m_flValue = flProgress;
+                if ( m_bInstantApply )
+                    UpdateConVar();
+            }
+        }
+
+        BaseClass::OnThink();
+    }
+
+    void ApplySchemeSettings(vgui::IScheme* pScheme)
+    {
+        BaseClass::ApplySchemeSettings(pScheme);
+
+        const char *pSliderSound = pScheme->GetResourceString( "Slider.Sound.Adjust" );
+        if (pSliderSound && *pSliderSound)
+            m_sSliderSoundName = g_ButtonSoundNames.AddString( pSliderSound );
     }
 
     void UpdateConVar() OVERRIDE
@@ -622,6 +737,12 @@ private:
     float m_flStep = 0.1f;
 
     int nTextPrecision = -1;
+
+    CUtlSymbol m_sSliderSoundName = UTL_INVAL_SYMBOL;
+    float m_flLastSliderSoundTime = 0.0f;
+
+    float m_flMouseStep = 0.1f;
+    bool m_bFineAdjust = false;
 
     GAMEPADUI_BUTTON_ANIMATED_PROPERTY( Color, m_colSliderBacking, "Slider.Backing", "255 255 255 22", SchemeValueTypes::Color );
     GAMEPADUI_BUTTON_ANIMATED_PROPERTY( Color, m_colSliderFill, "Slider.Fill", "255 255 255 255", SchemeValueTypes::Color );
@@ -1936,6 +2057,7 @@ void GamepadUIOptionsPanel::LoadOptionTabs( const char *pszOptionsFile )
                             "button_pressed",
                             pItemData->GetString( "text", "" ), pItemData->GetString( "description", "" ) );
                         button->SetToDefault();
+                        button->SetMouseStep( pItemData->GetFloat( "mouse_step", flStep ) );
                         m_Tabs[ m_nTabCount ].pButtons.AddToTail( button );
                     }
                     else if ( !V_strcmp( pItemType, "headeryheader" ) )
