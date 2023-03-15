@@ -33,6 +33,8 @@ const int MAX_OPTIONS_TABS = 8;
 class GamepadUIWheelyWheel;
 void OnResolutionsNeedUpdate( IConVar *var, const char *pOldValue, float flOldValue );
 
+extern CUtlSymbolTable g_ButtonSoundNames;
+
 ConVar _gamepadui_water_detail( "_gamepadui_water_detail", "0" );
 ConVar _gamepadui_shadow_detail( "_gamepadui_shadow_detail", "0" );
 ConVar _gamepadui_antialiasing( "_gamepadui_antialiasing", "0" );
@@ -375,10 +377,8 @@ public:
 #ifdef HL2_RETAIL // Steam input and Steam Controller are not supported in SDK2013 (Madi)
         case STEAMCONTROLLER_DPAD_LEFT:
 #endif
-            if ( --m_nSelectedItem < 0 )
-                m_nSelectedItem = Max( 0, m_Options.Count() - 1 );
-            if ( m_bInstantApply )
-                UpdateConVar();
+            vgui::surface()->PlaySound( g_ButtonSoundNames.String( m_sDepressedSoundName ) );
+            DecrementValue();
             break;
 
         case KEY_RIGHT:
@@ -387,10 +387,8 @@ public:
 #ifdef HL2_RETAIL
         case STEAMCONTROLLER_DPAD_RIGHT:
 #endif
-            if ( m_Options.Count() )
-                m_nSelectedItem = ( m_nSelectedItem + 1 ) % m_Options.Count();
-            if ( m_bInstantApply )
-                UpdateConVar();
+            vgui::surface()->PlaySound( g_ButtonSoundNames.String( m_sDepressedSoundName ) );
+            IncrementValue();
             break;
 
         default:
@@ -399,12 +397,55 @@ public:
         }
     }
 
-    void FireActionSignal()
+    void OnMousePressed( vgui::MouseCode code )
     {
-        BaseClass::FireActionSignal();
+        GamepadUIString& strOption = m_Options[ m_nSelectedItem ].strOptionText;
 
+        int x, y;
+        GetPos( x, y );
+
+        int nTextW, nTextH;
+        vgui::surface()->GetTextSize( m_hTextFont, strOption.String(), nTextW, nTextH );
+
+        int nScrollerSize = vgui::surface()->GetCharacterWidth( m_hTextFont, L'<' ) + vgui::surface()->GetCharacterWidth( m_hTextFont, L' ' );
+        int nTextLen = (nTextW + 2 * nScrollerSize);
+        int nTextStart = x + m_flWidth - m_flTextOffsetX - nTextLen;
+        int nTextHalfwayPoint = x + m_flWidth - m_flTextOffsetX - (nTextLen / 2);
+
+        // Give some room to roughly press the scroller's left side
+        nTextStart -= m_flClickPadding;
+
+        // Change value based on what side the player clicked on
+        int mx, my;
+        g_pVGuiInput->GetCursorPos( mx, my );
+        if (mx > nTextHalfwayPoint)
+        {
+            // Right side
+            IncrementValue();
+        }
+        else if (mx > nTextStart)
+        {
+            // Left side
+            DecrementValue();
+        }
+        else
+            return; // Don't play sound
+
+        BaseClass::OnMousePressed( code );
+    }
+
+    void IncrementValue()
+    {
         if ( m_Options.Count() )
             m_nSelectedItem = ( m_nSelectedItem + 1 ) % m_Options.Count();
+        if ( m_bInstantApply )
+            UpdateConVar();
+    }
+
+    void DecrementValue()
+    {
+        if ( --m_nSelectedItem < 0 )
+            m_nSelectedItem = Max( 0, m_Options.Count() - 1 );
         if ( m_bInstantApply )
             UpdateConVar();
     }
@@ -511,6 +552,8 @@ private:
     bool m_bSignOnly = false;
     int m_nSelectedItem = 0;
     CUtlVector< GamepadUIOption > m_Options;
+
+    GAMEPADUI_PANEL_PROPERTY( float, m_flClickPadding, "Button.Wheel.ClickPadding", "24", SchemeValueTypes::ProportionalFloat );
 
 };
 
