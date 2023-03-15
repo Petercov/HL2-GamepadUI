@@ -80,6 +80,14 @@ public:
 	
     float GetScreenRatio() const { return m_flScreenRatio; }
 
+#ifdef MAPBASE
+	void BonusMapChallengeNames( char *pchFileName, char *pchMapName, char *pchChallengeName ) OVERRIDE;
+	void BonusMapChallengeObjectives( int &iBronze, int &iSilver, int &iGold ) OVERRIDE;
+
+    void SetCurrentChallengeObjectives( int iBronze, int iSilver, int iGold );
+    void SetCurrentChallengeNames( const char *pszFileName, const char *pszMapName, const char *pszChallengeName );
+#endif
+
 private:
 
     IEngineSound            *m_pEngineSound            = NULL;
@@ -103,6 +111,14 @@ private:
     GamepadUIMainMenu* GetMainMenu() const;
 	
     float   m_flScreenRatio = 1.0f;
+
+#ifdef MAPBASE
+    char	m_szChallengeFileName[MAX_PATH];
+    char	m_szChallengeMapName[48];
+    char	m_szChallengeName[48];
+
+    int		m_iBronze, m_iSilver, m_iGold;
+#endif
 
     static GamepadUI *s_pGamepadUI;
 };
